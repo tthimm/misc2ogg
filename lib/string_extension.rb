@@ -28,3 +28,8 @@ module StringExtension
   end
 
 end
+
+class String
+  include StringExtension
+end
+

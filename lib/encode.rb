@@ -1,15 +1,12 @@
 #!/usr/bin/env ruby
 require File.dirname(__FILE__) + "/prepare_files_and_tempdir"
 require File.dirname(__FILE__) + "/string_extension"
+require File.dirname(__FILE__) + "/exceptions"
 require "rubygems"
 require "find"
 require "tagfile/tagfile" # https://github.com/masterkain/rtaglib
 
 # TODO: tag shouldn't contain underscores
-
-class String
-  include StringExtension
-end
 
 class Encode
   include PrepareFilesAndTempdir
@@ -25,16 +22,15 @@ class Encode
   end
 
   def run_encoding
-    unless PROFILE.has_key?(self.format) then
-      show_unsupported_and_supported_formats
-      Process.exit
+    unless PROFILE.has_key?(@format) then
+      raise UnsupportedException, "Output to #{@format} not supported. Supported: #{supported_formats}"
     end
     new_filename, path = prepare_files_and_tempdir(nil)
-    self.output = add_tempdir_path_to_filename(new_filename, path)
-    self.output = add_new_extension(self.output)
+    @output = add_tempdir_path_to_filename(new_filename, path)
+    @output = add_new_extension(self.output)
     new_filename = add_tempdir_path_to_filename(new_filename, path)
 
-    convert_file(new_filename, self.output)
+    convert_file(new_filename, @output)
     delete_symlink!(new_filename)
     create_file_tags!
   end
@@ -42,14 +38,14 @@ class Encode
   private
 
   def create_file_tags!
-    artist, title = File.basename(self.output, self.format.to_s).split("-")
-    copy = create_file_copy(self.output)
+    artist, title = File.basename(@output, @format.to_s).split("-")
+    copy = create_file_copy(@output)
     tag = TagFile::File.new(copy)
     tag.artist = artist
     tag.title = title.chop! unless title.nil?
     tag.save
-    FileUtils.rm(self.output)
-    FileUtils.mv(copy, self.output)
+    FileUtils.rm(@output)
+    FileUtils.mv(copy, @output)
   end
 
   def supported_formats
@@ -61,25 +57,20 @@ class Encode
     puts " format is optional, defaults to \"ogg\""
   end
 
-  def show_unsupported_and_supported_formats
-    puts " #{self.format.to_s.to_colored(:red)} not yet supported."
-    puts " Conversion to #{supported_formats.to_colored(:green)} possible."
-  end
-
   def convert_file(input,output)
-    `ffmpeg -y -i #{input} #{PROFILE[self.format]} #{output}`
+    `ffmpeg -y -i #{input} #{PROFILE[@format]} #{output}`
   end
 
   def prepare_files_and_tempdir(temp)
-    file_without_path = remove_path_from_filename(clear_filename(self.input))
+    file_without_path = remove_path_from_filename(clear_filename(@input))
     tempdir = create_tempdir!(temp)
     sometimes_remove_trailing_slash!(tempdir)
-    new_path = create_symlink_in_tempdir(self.input, file_without_path, tempdir)
+    new_path = create_symlink_in_tempdir(@input, file_without_path, tempdir)
     return file_without_path, new_path
   end
 
   def add_new_extension(filename)
-    filename.sub(/\.\w{1,3}\z/, ".#{self.format}")
+    filename.sub(/\.\w{1,3}\z/, ".#{@format}")
   end
 
 
