@@ -1,22 +1,28 @@
 #!/usr/bin/env ruby
+unless RUBY_VERSION == "1.8.7" then
+  raise "Error: ruby version 1.8.7 required"
+end
+
 require File.dirname(__FILE__) + "/prepare_files_and_tempdir"
 require File.dirname(__FILE__) + "/string_extension"
 require File.dirname(__FILE__) + "/exceptions"
 require "rubygems"
 require "find"
-require "tagfile/tagfile" # https://github.com/masterkain/rtaglib
 
-# TODO: tag shouldn't contain underscores
+# https://github.com/masterkain/rtaglib
+# gem install rtaglib --version 0.2.3
+require 'tagfile/tagfile'
 
 class Encode
   include PrepareFilesAndTempdir
 
-  PROFILE = {:ogg => "-acodec libvorbis -ac 2 -ar 44100 -ab 128k -vn"}
+  PROFILE = {:ogg => "-acodec libvorbis -ac 2 -ar 44100 -ab 128k -vn",
+   :mp3 => "-acodec libmp3lame -ac 2 -ar 44100 -ab 128k -vn"}
 
   attr_reader :input, :format
   attr_accessor :output
 
-  def initialize(input,format="ogg")
+  def initialize(input,format="mp3")
     @input  = input
     @format = format.to_sym
   end
@@ -29,7 +35,6 @@ class Encode
     @output = add_tempdir_path_to_filename(new_filename, path)
     @output = add_new_extension(self.output)
     new_filename = add_tempdir_path_to_filename(new_filename, path)
-
     convert_file(new_filename, @output)
     delete_symlink!(new_filename)
     create_file_tags!
@@ -41,8 +46,8 @@ class Encode
     artist, title = File.basename(@output, @format.to_s).split("-")
     copy = create_file_copy(@output)
     tag = TagFile::File.new(copy)
-    tag.artist = artist
-    tag.title = title.chop! unless title.nil?
+    tag.artist = remove_underscore_from_tag(artist)
+    tag.title = remove_underscore_from_tag(title.chop!) unless title.nil?
     tag.save
     FileUtils.rm(@output)
     FileUtils.mv(copy, @output)
@@ -85,19 +90,19 @@ unless ARGV.empty? then
   encode = Encode.new(ARGV[0], ARGV[1]) if ARGV[0] && ARGV[1]
   encode = Encode.new(ARGV[0]) if ARGV[0] && !ARGV[1]
   encode.run_encoding
-end
-#else # batchencoding
-#  file_list = []
-#  Find.find("./") do |file|
-#    unless File.directory?(file) then
-#      if has_allowed_extension?(file) then
-#        file_list << file
-#      end
-#    end
-#  end
-#  file_list.each do |f|
-#    encode = Encode.new(f)
-#    encode.run_encoding
-#  end
 #end
+else # batchencoding
+  file_list = []
+  Find.find("./") do |file|
+    unless File.directory?(file) then
+      if has_allowed_extension?(file) then
+        file_list << file
+      end
+    end
+  end
+  file_list.each do |f|
+    encode = Encode.new(f)
+    encode.run_encoding
+  end
+end
 

@@ -10,13 +10,22 @@ module PrepareFilesAndTempdir
     new_filename.gsub!(/\(|\)/, "")       # remove braces
     new_filename.gsub!(/_-_/, "-")        # "_-_" -> "-"
     new_filename.sub!(/\A_/, "")          # remove leading "_"
+    new_filename.sub!(/kahvi\d*.{0,2}\_/, "")  # remove prefix from kahvi.org releases
+    new_filename.gsub!(/\'/, "")          # remove '
     return new_filename
+  end
+
+  def remove_underscore_from_tag(tag_string)
+    string = tag_string.gsub!(/_/, ' ')
+    return string.nil? ? tag_string : string
   end
 
   def remove_path_from_filename(file)
     match = /\/([\w-]+.\w+)\z/.match(file)
     unless match.nil? then
-      new_filename = match.captures.to_s
+      new_filename = match.captures.first
+      #puts "nf:#{new_filename}"
+      
       return new_filename
     else
       raise "Error: Could not remove path from #{file}"
