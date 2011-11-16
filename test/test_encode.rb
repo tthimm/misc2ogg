@@ -7,11 +7,6 @@ class TestEncode < Test::Unit::TestCase
     @file = File.dirname(__FILE__) + "/fixtures/DTMF-DelayEd.wav"
   end
 
-  def test_should_not_run_for_unsupported_files
-    encode = Encode.new(@file, "wav")
-    assert_raises(UnsupportedException) { encode.run_encoding }
-  end
-
   def test_create_file_tags
     encode = Encode.new(@file, "ogg")
     encode.run_encoding

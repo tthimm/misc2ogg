@@ -1,3 +1,0 @@
-class UnsupportedException < RuntimeError
-end
-

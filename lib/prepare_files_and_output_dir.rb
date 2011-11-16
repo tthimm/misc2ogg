@@ -1,6 +1,6 @@
 require 'fileutils'
 
-module PrepareFilesAndTempdir
+module PrepareFilesAndOutputDir
 
   def clear_filename(filename)
     new_filename = filename.dup.downcase
@@ -11,7 +11,7 @@ module PrepareFilesAndTempdir
     new_filename.gsub!(/_-_/, "-")        # "_-_" -> "-"
     new_filename.sub!(/\A_/, "")          # remove leading "_"
     new_filename.sub!(/kahvi\d*.{0,2}\_/, "")  # remove prefix from kahvi.org releases
-    new_filename.gsub!(/\'/, "")          # remove '
+    new_filename.gsub!(/\'/, "")          # remove "'"
     return new_filename
   end
 
@@ -24,28 +24,25 @@ module PrepareFilesAndTempdir
     match = /\/([\w-]+.\w+)\z/.match(file)
     unless match.nil? then
       new_filename = match.captures.first
-      #puts "nf:#{new_filename}"
-      
       return new_filename
     else
       raise "Error: Could not remove path from #{file}"
     end
   end
 
-  def add_tempdir_path_to_filename(file,tempdir)
-    filename_with_path = "#{tempdir}/#{file}"
+  def add_output_dir_path_to_filename(file,outdir)
+    filename_with_path = "#{outdir}/#{file}"
     return filename_with_path
   end
 
   # default is $HOME/tmp
-  def create_tempdir!(dir)
-    tempdir = dir.nil? ? "#{ENV['HOME']}/tmp" : dir
-    FileUtils.mkdir_p(tempdir)
-    return tempdir
+  def sometimes_create_output_dir!(dir)
+    FileUtils.mkdir_p(outdir)
+    return outdir
   end
 
   def create_file_copy(file)
-    copy = "copy-" + File.basename(file) # inserts "copy-" to filename
+    copy = "copy-" + File.basename(file) # prepends "copy-" to filename
     copy = File.dirname(file) + "/#{copy}"
     FileUtils.copy(file, copy)
     return copy
@@ -60,16 +57,16 @@ module PrepareFilesAndTempdir
     end
   end
 
-  def create_symlink_in_tempdir(file_old_path,file,tempdir)
-    file_new_path = add_tempdir_path_to_filename(file, tempdir)
+  def create_symlink_in_output_dir(file_old_path,file,outdir)
+    file_new_path = add_output_dir_path_to_filename(file, outdir)
     if file_new_path then
       unless File.exists?(file_new_path) then # maybe there was an error and symlink was not deleted
         file_old_path = "#{FileUtils.pwd}/#{file_old_path}" unless is_absolute_path?(file_old_path)
         FileUtils.ln_s(file_old_path, file_new_path)
       end
-      return tempdir
+      return outdir
     else
-      raise "Error: Could not add tempdir path to #{file}"
+      raise "Error: Could not add output directory path to #{file}"
     end
   end
 
@@ -84,6 +81,14 @@ module PrepareFilesAndTempdir
 
   def sometimes_remove_trailing_slash!(path)
     path.sub!(%r{/\z}, '')
+  end
+
+  def prepare_files_and_output_dir(path, input)
+    file_without_path = remove_path_from_filename(clear_filename(input))
+    outdir = sometimes_create_output_dir!(path)
+    sometimes_remove_trailing_slash!(outdir)
+    new_path = create_symlink_in_output_dir(input, file_without_path, outdir)
+    return file_without_path, new_path
   end
 
 end
