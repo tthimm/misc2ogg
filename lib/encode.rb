@@ -78,6 +78,11 @@ class Encode
     filename.sub(/\.\w{1,3}\z/, ".#{@format}")
   end
 
+  def self.has_allowed_extension?(file)
+    allowed = ["mp3", "flv", "mp4", "ogg", "divx", "avi"]
+    allowed.include?(File.extname(file.downcase).sub(/\./, ''))
+  end
+
 
 end
 

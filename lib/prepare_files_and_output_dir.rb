@@ -36,7 +36,7 @@ module PrepareFilesAndOutputDir
   end
 
   # default is $HOME/tmp
-  def sometimes_create_output_dir!(dir)
+  def sometimes_create_output_dir!(outdir)
     FileUtils.mkdir_p(outdir)
     return outdir
   end
