@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 require File.dirname(__FILE__) + "/environment"
 
-# FIXME: if the source file has same format as the output format, then the source file gets overwritten (caused by symlink) => copy and/or name prefix
-
 # TODO: check start parameters: "-s" needs file, "-f" needs format, "-r -s" wat, etc
 
 # TODO: add quality profiles (HQ, LQ, ...)
@@ -30,7 +28,7 @@ class Encode
       Process.exit(false)
     end
     new_filename, path = prepare_files_and_output_dir(@outpath, @input)
-    @output = add_output_dir_path_to_filename(new_filename, path)
+    @output = add_output_dir_path_to_filename(new_filename.sub(/\A\./, ''), path)
     @output = add_new_extension(self.output)
     new_filename = add_output_dir_path_to_filename(new_filename, path)
     convert_file(new_filename, @output)

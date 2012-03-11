@@ -85,6 +85,7 @@ module PrepareFilesAndOutputDir
 
   def prepare_files_and_output_dir(path, input)
     file_without_path = remove_path_from_filename(clear_filename(input))
+    file_without_path = '.' + file_without_path
     outdir = sometimes_create_output_dir!(path)
     sometimes_remove_trailing_slash!(outdir)
     new_path = create_symlink_in_output_dir(input, file_without_path, outdir)
