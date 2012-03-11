@@ -5,29 +5,20 @@ module PrepareFilesAndOutputDir
   def clear_filename(filename)
     new_filename = filename.dup.downcase
     new_filename.gsub!(/\s+/, "_")        # whitespaces -> underscore
-    new_filename.gsub!(/_{2,}/, "_")      # multiple underscores -> one underscore
     new_filename.gsub!(/\&/, "_and_")     # "&" -> "_and_"
+    new_filename.gsub!(/\!/, "")          # "!" -> ""
     new_filename.gsub!(/\(|\)/, "")       # remove braces
     new_filename.gsub!(/_-_/, "-")        # "_-_" -> "-"
     new_filename.sub!(/\A_/, "")          # remove leading "_"
     new_filename.sub!(/kahvi\d*.{0,2}\_/, "")  # remove prefix from kahvi.org releases
     new_filename.gsub!(/\'/, "")          # remove "'"
+    new_filename.gsub!(/_{2,}/, "_")      # multiple underscores -> one underscore
     return new_filename
   end
 
   def remove_underscore_from_tag(tag_string)
     string = tag_string.gsub!(/_/, ' ')
     return string.nil? ? tag_string : string
-  end
-
-  def remove_path_from_filename(file)
-    match = /\/([\w-]+.\w+)\z/.match(file)
-    unless match.nil? then
-      new_filename = match.captures.first
-      return new_filename
-    else
-      raise "Error: Could not remove path from #{file}"
-    end
   end
 
   def add_output_dir_path_to_filename(file,outdir)
@@ -84,7 +75,7 @@ module PrepareFilesAndOutputDir
   end
 
   def prepare_files_and_output_dir(path, input)
-    file_without_path = remove_path_from_filename(clear_filename(input))
+    file_without_path = File.basename(clear_filename(input))
     file_without_path = '.' + file_without_path
     outdir = sometimes_create_output_dir!(path)
     sometimes_remove_trailing_slash!(outdir)
